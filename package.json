@@ -1,0 +1,16 @@
+{
+  "name": "capstone-root",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "install:all": "cd frontend && npm install && cd ../backend && npm install && cd ../tests && npm install",
+    "dev": "concurrently \"cd backend && npm run dev\" \"cd frontend && npm run dev\"",
+    "build": "cd backend && npm run build && cd ../frontend && npm run build",
+    "test": "cd tests && npx playwright test",
+    "test:report": "cd tests && npx playwright show-report",
+    "sdlc": "npm run build && npm run test"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

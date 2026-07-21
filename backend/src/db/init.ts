@@ -1,0 +1,37 @@
+import { createClient, Client } from '@libsql/client'
+import path from 'path'
+import fs from 'fs'
+
+let client: Client
+
+export function getDb(): Client {
+  if (!client) {
+    const dbPath = process.env.DATABASE_PATH || './data/capstone.db'
+    const dir = path.dirname(dbPath)
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
+    client = createClient({ url: `file:${dbPath}` })
+  }
+  return client
+}
+
+export async function initDb() {
+  const db = getDb()
+  await db.executeMultiple(`
+    CREATE TABLE IF NOT EXISTS users (
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      email         TEXT UNIQUE NOT NULL,
+      password_hash TEXT NOT NULL,
+      created_at    DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE TABLE IF NOT EXISTS items (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      title       TEXT NOT NULL,
+      description TEXT,
+      status      TEXT DEFAULT 'active',
+      user_id     INTEGER REFERENCES users(id),
+      created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at  DATETIME
+    );
+  `)
+  console.log('Database initialized')
+}
