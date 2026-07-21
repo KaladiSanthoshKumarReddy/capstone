@@ -1,18 +1,20 @@
 import { Page, Locator } from '@playwright/test'
 
 export class LoginPage {
-  readonly page: Page
-  readonly emailInput: Locator
+  readonly page:          Page
+  readonly heading:       Locator
+  readonly emailInput:    Locator
   readonly passwordInput: Locator
-  readonly loginButton: Locator
-  readonly errorMessage: Locator
+  readonly loginButton:   Locator
+  readonly errorMessage:  Locator
 
   constructor(page: Page) {
-    this.page = page
-    this.emailInput = page.getByTestId('email-input')
+    this.page          = page
+    this.heading       = page.getByRole('heading', { name: 'Sign In' })
+    this.emailInput    = page.getByTestId('email-input')
     this.passwordInput = page.getByTestId('password-input')
-    this.loginButton = page.getByTestId('login-button')
-    this.errorMessage = page.getByTestId('login-error')
+    this.loginButton   = page.getByTestId('login-button')
+    this.errorMessage  = page.getByTestId('login-error')
   }
 
   async goto() {
