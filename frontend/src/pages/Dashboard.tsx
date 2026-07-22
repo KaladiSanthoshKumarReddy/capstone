@@ -27,7 +27,11 @@ export default function Dashboard() {
     setSearchParams(prev => {
       const next = new URLSearchParams(prev)
       Object.entries(patch).forEach(([k, v]) => {
-        if (v) next.set(k, v); else next.delete(k)
+        if (!v || (k === 'page' && v === '1')) {
+          next.delete(k)
+        } else {
+          next.set(k, v)
+        }
       })
       return next
     }, { replace: true })
@@ -93,11 +97,11 @@ export default function Dashboard() {
         <div className="flex gap-3 mb-4 flex-wrap">
           <SearchBar
             value={search}
-            onChange={v => updateParams({ search: v, page: '1' })}
+            onChange={v => updateParams({ search: v, page: '' })}
           />
           <StatusFilter
             value={status}
-            onChange={v => updateParams({ status: v, page: '1' })}
+            onChange={v => updateParams({ status: v, page: '' })}
           />
         </div>
 

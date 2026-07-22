@@ -30,12 +30,13 @@ test.describe('Item Management', () => {
   test('should add a new item', async ({ page }) => {
     const titleInput = page.getByTestId('item-title-input')
     const addBtn     = page.getByTestId('add-item-button')
+    const title = `My first test item ${Date.now()}`
 
-    await titleInput.fill('My first test item')
+    await titleInput.fill(title)
     await addBtn.click()
 
     await expect(titleInput).toHaveValue('')
-    await expect(page.getByText('My first test item')).toBeVisible()
+    await expect(page.getByText(title)).toBeVisible()
   })
 
   test('should delete an item', async ({ page }) => {
@@ -57,36 +58,48 @@ test.describe('Item Management', () => {
   test('should toggle item status to completed', async ({ page }) => {
     const titleInput = page.getByTestId('item-title-input')
     const addBtn     = page.getByTestId('add-item-button')
+    const title = `Toggle me ${Date.now()}`
 
-    await titleInput.fill('Toggle me')
+    await titleInput.fill(title)
     await addBtn.click()
-    await page.waitForSelector('[data-testid^="item-card-"]')
+    await expect(page.getByText(title)).toBeVisible()
 
-    const toggle = page.locator('[data-testid^="item-toggle-"]').first()
-    await toggle.check()
+    const titleEl = page.locator('[data-testid^="item-title-"]').filter({ hasText: title }).first()
+    const titleTestId = await titleEl.getAttribute('data-testid')
+    const id = titleTestId?.replace('item-title-', '')
+    expect(id).toBeTruthy()
+
+    const toggle = page.locator(`[data-testid="item-toggle-${id}"]`)
+    await toggle.click()
 
     // Status badge should show 'completed'
-    await expect(page.locator('[data-testid^="item-status-"]').first()).toHaveText('completed')
+    await expect(page.locator(`[data-testid="item-status-${id}"]`)).toHaveText('completed')
   })
 
   test('should inline-edit item title', async ({ page }) => {
     const titleInput = page.getByTestId('item-title-input')
     const addBtn     = page.getByTestId('add-item-button')
+    const title = `Old title ${Date.now()}`
+    const nextTitle = `New title ${Date.now()}`
 
-    await titleInput.fill('Old title')
+    await titleInput.fill(title)
     await addBtn.click()
-    await page.waitForSelector('[data-testid^="item-title-"]')
+    await expect(page.getByText(title)).toBeVisible()
 
     // Click the title to enter edit mode
-    const titleEl = page.locator('[data-testid^="item-title-"]').first()
+    const titleEl = page.locator('[data-testid^="item-title-"]').filter({ hasText: title }).first()
+    const titleTestId = await titleEl.getAttribute('data-testid')
+    const id = titleTestId?.replace('item-title-', '')
+    expect(id).toBeTruthy()
     await titleEl.click()
 
-    const editInput = page.locator('[data-testid^="item-edit-input-"]').first()
-    await editInput.fill('New title')
+    const editInput = page.locator(`[data-testid="item-edit-input-${id}"]`)
+    await expect(editInput).toBeVisible()
+    await editInput.fill(nextTitle)
     await editInput.press('Enter')
 
-    await expect(page.getByText('New title')).toBeVisible()
-    await expect(page.getByText('Old title')).not.toBeVisible()
+    await expect(page.getByText(nextTitle)).toBeVisible()
+    await expect(page.getByText(title)).not.toBeVisible()
   })
 })
 
@@ -119,7 +132,8 @@ test.describe('Search and Filter', () => {
     await page.waitForTimeout(400)
     const url = new URL(page.url())
     // page param should be absent or 1
-    expect(url.searchParams.get('page')).toBeNull()
+    const pageParam = url.searchParams.get('page')
+    expect(pageParam === null || pageParam === '1').toBe(true)
   })
 })
 

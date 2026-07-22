@@ -232,43 +232,64 @@ test.describe('Dashboard — Item Interactions', () => {
 
   test('can toggle item status to completed', async ({ page }) => {
     const dash = new DashboardPage(page)
-    await dash.itemTitleInput.fill('Toggle Status Test')
+    const title = `Toggle Status Test ${Date.now()}`
+    await dash.itemTitleInput.fill(title)
     await dash.addItemButton.click()
-    await page.waitForSelector('[data-testid^="item-card-"]')
+    await expect(page.getByText(title)).toBeVisible()
 
-    const toggle = page.locator('[data-testid^="item-toggle-"]').first()
-    await toggle.check()
-    const badge = page.locator('[data-testid^="item-status-"]').first()
+    const titleEl = page.locator('[data-testid^="item-title-"]').filter({ hasText: title }).first()
+    const titleTestId = await titleEl.getAttribute('data-testid')
+    const id = titleTestId?.replace('item-title-', '')
+    expect(id).toBeTruthy()
+
+    const toggle = page.locator(`[data-testid="item-toggle-${id}"]`)
+    await toggle.click()
+    const badge = page.locator(`[data-testid="item-status-${id}"]`)
     await expect(badge).toHaveText('completed')
   })
 
   test('can inline-edit item title', async ({ page }) => {
     const dash = new DashboardPage(page)
-    await dash.itemTitleInput.fill('Original Title')
+    const title = `Original Title ${Date.now()}`
+    const nextTitle = `Updated Title ${Date.now()}`
+    await dash.itemTitleInput.fill(title)
     await dash.addItemButton.click()
-    await page.waitForSelector('[data-testid^="item-title-"]')
+    await expect(page.getByText(title)).toBeVisible()
 
-    await page.locator('[data-testid^="item-title-"]').first().click()
-    const editInput = page.locator('[data-testid^="item-edit-input-"]').first()
-    await editInput.fill('Updated Title')
+    const titleEl = page.locator('[data-testid^="item-title-"]').filter({ hasText: title }).first()
+    const titleTestId = await titleEl.getAttribute('data-testid')
+    const id = titleTestId?.replace('item-title-', '')
+    expect(id).toBeTruthy()
+
+    await titleEl.click()
+    const editInput = page.locator(`[data-testid="item-edit-input-${id}"]`)
+    await expect(editInput).toBeVisible()
+    await editInput.fill(nextTitle)
     await editInput.press('Enter')
 
-    await expect(page.getByText('Updated Title')).toBeVisible()
-    await expect(page.getByText('Original Title')).not.toBeVisible()
+    await expect(page.getByText(nextTitle)).toBeVisible()
+    await expect(page.getByText(title)).not.toBeVisible()
   })
 
   test('pressing Escape cancels inline edit without saving', async ({ page }) => {
     const dash = new DashboardPage(page)
-    await dash.itemTitleInput.fill('No Change Title')
+    const title = `No Change Title ${Date.now()}`
+    await dash.itemTitleInput.fill(title)
     await dash.addItemButton.click()
-    await page.waitForSelector('[data-testid^="item-title-"]')
+    await expect(page.getByText(title)).toBeVisible()
 
-    await page.locator('[data-testid^="item-title-"]').first().click()
-    const editInput = page.locator('[data-testid^="item-edit-input-"]').first()
+    const titleEl = page.locator('[data-testid^="item-title-"]').filter({ hasText: title }).first()
+    const titleTestId = await titleEl.getAttribute('data-testid')
+    const id = titleTestId?.replace('item-title-', '')
+    expect(id).toBeTruthy()
+
+    await titleEl.click()
+    const editInput = page.locator(`[data-testid="item-edit-input-${id}"]`)
+    await expect(editInput).toBeVisible()
     await editInput.fill('Abandoned Edit')
     await editInput.press('Escape')
 
-    await expect(page.getByText('No Change Title')).toBeVisible()
+    await expect(page.getByText(title)).toBeVisible()
     await expect(page.getByText('Abandoned Edit')).not.toBeVisible()
   })
 })

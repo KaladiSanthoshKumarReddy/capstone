@@ -4,6 +4,7 @@ import dotenv from 'dotenv'
 import { initDb } from './db/init'
 import authRouter from './routes/auth'
 import itemsRouter from './routes/items'
+import debugRouter from './routes/debug'
 
 dotenv.config({ path: '../.env' })
 
@@ -15,6 +16,10 @@ app.use(express.json())
 
 app.use('/api/auth', authRouter)
 app.use('/api/items', itemsRouter)
+
+if (process.env.NODE_ENV !== 'production') {
+  app.use('/api/debug', debugRouter)
+}
 
 app.get('/api/health', (_req, res) => {
   res.json({ success: true, data: { status: 'ok' } })

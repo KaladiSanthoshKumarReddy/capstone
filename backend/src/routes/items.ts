@@ -27,8 +27,8 @@ router.get('/', async (req: AuthRequest, res: Response) => {
 
   const db = getDb()
 
-  const whereClauses: string[] = []
-  const args: (string | number | null)[] = []
+  const whereClauses: string[] = ['user_id = ?']
+  const args: (string | number | null)[] = [req.userId ?? null]
 
   if (search) {
     whereClauses.push("(title LIKE ? OR description LIKE ?)")
@@ -88,21 +88,34 @@ router.patch('/:id', async (req: AuthRequest, res: Response) => {
   if (title)                { setClauses.push('title = ?');       args.push(title) }
   if (description !== undefined) { setClauses.push('description = ?'); args.push(description) }
   if (status)               { setClauses.push('status = ?');      args.push(status) }
-  args.push(req.params.id)
+  args.push(req.params.id, req.userId ?? null)
 
-  await db.execute({
-    sql: `UPDATE items SET ${setClauses.join(', ')} WHERE id = ?`,
+  const result = await db.execute({
+    sql: `UPDATE items SET ${setClauses.join(', ')} WHERE id = ? AND user_id = ?`,
     args,
   })
 
-  const updated = await db.execute({ sql: 'SELECT * FROM items WHERE id = ?', args: [req.params.id] })
+  if (result.rowsAffected === 0) {
+    return res.status(404).json({ success: false, error: 'Item not found' })
+  }
+
+  const updated = await db.execute({
+    sql: 'SELECT * FROM items WHERE id = ? AND user_id = ?',
+    args: [req.params.id, req.userId ?? null],
+  })
   return res.json({ success: true, data: updated.rows[0] })
 })
 
 // DELETE /api/items/:id
 router.delete('/:id', async (req: AuthRequest, res: Response) => {
   const db = getDb()
-  await db.execute({ sql: 'DELETE FROM items WHERE id = ?', args: [req.params.id] })
+  const result = await db.execute({
+    sql: 'DELETE FROM items WHERE id = ? AND user_id = ?',
+    args: [req.params.id, req.userId ?? null],
+  })
+  if (result.rowsAffected === 0) {
+    return res.status(404).json({ success: false, error: 'Item not found' })
+  }
   return res.json({ success: true, data: { deleted: true } })
 })
 

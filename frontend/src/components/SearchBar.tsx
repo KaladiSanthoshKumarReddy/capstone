@@ -9,9 +9,14 @@ export default function SearchBar({ value, onChange }: Props) {
   const [local, setLocal] = useState(value)
 
   useEffect(() => {
+    setLocal(value)
+  }, [value])
+
+  useEffect(() => {
+    if (local === value) return
     const t = setTimeout(() => onChange(local), 300)
     return () => clearTimeout(t)
-  }, [local, onChange])
+  }, [local, value, onChange])
 
   return (
     <input
