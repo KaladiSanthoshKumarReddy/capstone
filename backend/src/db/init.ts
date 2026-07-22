@@ -33,5 +33,14 @@ export async function initDb() {
       updated_at  DATETIME
     );
   `)
+
+  // Migration: add updated_at if it was missing from the original schema
+  const cols = await db.execute("PRAGMA table_info(items)")
+  const hasUpdatedAt = cols.rows.some((r: unknown) => (r as { name: string }).name === 'updated_at')
+  if (!hasUpdatedAt) {
+    await db.execute("ALTER TABLE items ADD COLUMN updated_at DATETIME")
+    console.log('Migration: added updated_at column to items')
+  }
+
   console.log('Database initialized')
 }

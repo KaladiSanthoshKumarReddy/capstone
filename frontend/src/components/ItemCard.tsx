@@ -20,23 +20,33 @@ export default function ItemCard({ item, onDelete, onUpdate }: Props) {
 
   async function handleToggle() {
     setBusy(true)
-    const next = item.status === 'completed' ? 'active' : 'completed'
-    await onUpdate(item.id, { status: next })
-    setBusy(false)
+    try {
+      const next = item.status === 'completed' ? 'active' : 'completed'
+      await onUpdate(item.id, { status: next })
+    } catch {
+      setBusy(false)
+    }
   }
 
   async function handleEditSave() {
     if (!editTitle.trim() || editTitle === item.title) { setEditing(false); return }
     setBusy(true)
-    await onUpdate(item.id, { title: editTitle.trim() })
-    setBusy(false)
-    setEditing(false)
+    try {
+      await onUpdate(item.id, { title: editTitle.trim() })
+      setEditing(false)
+    } catch {
+      setBusy(false)
+    }
   }
 
   async function handleDelete() {
     if (!window.confirm(`Delete "${item.title}"?`)) return
     setBusy(true)
-    await onDelete(item.id)
+    try {
+      await onDelete(item.id)
+    } catch {
+      setBusy(false)
+    }
   }
 
   return (

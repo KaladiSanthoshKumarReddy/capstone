@@ -1,30 +1,32 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import axios from 'axios'
-import { useAuthStore } from '../store/authStore'
 
-export default function Login() {
+export default function Register() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
-  const setAuth = useAuthStore(s => s.setAuth)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters')
+      return
+    }
     setLoading(true)
     try {
-      const res = await axios.post<{ success: boolean; data: { token: string; email: string } }>(
-        '/api/auth/login',
-        { email, password }
-      )
-      setAuth(res.data.data.token, res.data.data.email)
-      navigate('/dashboard')
-    } catch {
-      setError('Invalid credentials')
+      await axios.post('/api/auth/register', { email, password })
+      navigate('/login')
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err) && err.response?.status === 409) {
+        setError('Email already registered')
+      } else {
+        setError('Registration failed. Please try again.')
+      }
     } finally {
       setLoading(false)
     }
@@ -36,9 +38,9 @@ export default function Login() {
         onSubmit={handleSubmit}
         className="bg-white p-8 rounded-xl shadow-md w-full max-w-sm space-y-4"
       >
-        <h2 className="text-2xl font-bold text-center">Sign In</h2>
+        <h2 className="text-2xl font-bold text-center">Create Account</h2>
         {error && (
-          <p className="text-red-500 text-sm text-center" data-testid="login-error">
+          <p className="text-red-500 text-sm text-center" data-testid="register-error">
             {error}
           </p>
         )}
@@ -48,17 +50,17 @@ export default function Login() {
           value={email}
           onChange={e => setEmail(e.target.value)}
           className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          data-testid="email-input"
+          data-testid="register-email-input"
           required
         />
         <div className="relative">
           <input
             type={showPassword ? 'text' : 'password'}
-            placeholder="Password"
+            placeholder="Password (min 6 characters)"
             value={password}
             onChange={e => setPassword(e.target.value)}
             className="w-full border rounded-lg px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            data-testid="password-input"
+            data-testid="register-password-input"
             required
           />
           <button
@@ -84,13 +86,13 @@ export default function Login() {
           type="submit"
           disabled={loading}
           className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
-          data-testid="login-button"
+          data-testid="register-button"
         >
-          {loading ? 'Signing in…' : 'Login'}
+          {loading ? 'Creating account…' : 'Register'}
         </button>
         <p className="text-xs text-center text-gray-400">
-          No account?{' '}
-          <Link to="/register" className="text-blue-500 hover:underline">Register</Link>
+          Already have an account?{' '}
+          <Link to="/login" className="text-blue-500 hover:underline">Sign In</Link>
         </p>
       </form>
     </div>
