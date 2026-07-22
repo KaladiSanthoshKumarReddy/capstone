@@ -15,6 +15,10 @@ A brownfield React + Node.js task-management app used to demonstrate a full AI-a
 | Confluence Home | https://kb.epam.com/pages/viewpage.action?pageId=2889552361 |
 | Architecture Doc | https://kb.epam.com/pages/viewpage.action?pageId=2889554110 |
 | HLD | https://kb.epam.com/pages/viewpage.action?pageId=2889554152 |
+| FRD | https://kb.epam.com/pages/viewpage.action?pageId=2889556181 |
+| API Reference | https://kb.epam.com/pages/viewpage.action?pageId=2889556182 |
+| Test Execution Report | https://kb.epam.com/pages/viewpage.action?pageId=2889556184 |
+| Deployment Guide | https://kb.epam.com/pages/viewpage.action?pageId=2889556185 |
 
 ---
 
@@ -59,15 +63,17 @@ cp .env.example .env
 
 Key variables:
 
-| Variable | Description |
-|----------|-------------|
-| `BACKEND_PORT` | Express port (default `4000`) |
-| `FRONTEND_PORT` | Vite dev port (default `3000`) |
-| `DATABASE_PATH` | SQLite file path (default `./data/capstone.db`) |
-| `JWT_SECRET` | Token signing secret — **change in production** |
-| `JIRA_API_TOKEN` | EPAM Jira Personal Access Token |
-| `CONFLUENCE_API_TOKEN` | EPAM Confluence Personal Access Token |
-| `GITHUB_TOKEN` | GitHub PAT with `repo` scope |
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `BACKEND_PORT` | `4000` | Express server port |
+| `FRONTEND_PORT` | `3000` | Vite dev server port |
+| `DATABASE_PATH` | `./data/capstone.db` | SQLite file path |
+| `JWT_SECRET` | `dev-secret` | Token signing secret — **change in production** |
+| `JIRA_BASE_URL` | `https://jiraeu.epam.com` | Jira instance URL |
+| `JIRA_API_TOKEN` | — | EPAM Jira Personal Access Token |
+| `CONFLUENCE_BASE_URL` | `https://kb.epam.com` | Confluence instance URL |
+| `CONFLUENCE_API_TOKEN` | — | EPAM Confluence Personal Access Token |
+| `GITHUB_TOKEN` | — | GitHub PAT with `repo` scope |
 
 ### 3 — Run in development
 
@@ -89,7 +95,7 @@ Start production server:
 
 ```bash
 cd backend && node dist/index.js
-cd frontend && npx vite preview
+cd frontend && npx vite preview  # → http://localhost:4173
 ```
 
 ---
@@ -100,31 +106,57 @@ cd frontend && npx vite preview
 capstone/
 ├── backend/
 │   ├── src/
-│   │   ├── db/init.ts          # SQLite schema + singleton client
-│   │   ├── middleware/auth.ts  # JWT verify middleware
+│   │   ├── db/init.ts             # SQLite schema + singleton client (@libsql/client)
+│   │   ├── middleware/auth.ts     # JWT verify middleware
 │   │   └── routes/
-│   │       ├── auth.ts         # POST /api/auth/login|register
-│   │       └── items.ts        # GET|POST|PATCH|DELETE /api/items
-│   └── dist/                   # Compiled output (git-ignored)
+│   │       ├── auth.ts            # POST /api/auth/login|register
+│   │       ├── items.ts           # GET|POST|PATCH|DELETE /api/items
+│   │       └── debug.ts           # Dev-only debug utilities (excluded from prod)
+│   └── dist/                      # Compiled output (git-ignored)
 ├── frontend/
 │   ├── src/
-│   │   ├── api/                # Axios client + items API helpers
-│   │   ├── components/         # ItemCard, ItemForm, SearchBar, etc.
-│   │   ├── pages/              # Login, Dashboard, NotFound
-│   │   ├── store/authStore.ts  # Zustand auth state
-│   │   └── types/index.ts      # Shared TypeScript interfaces
-│   └── dist/                   # Vite production bundle (git-ignored)
+│   │   ├── api/                   # Axios client + typed items API helpers
+│   │   ├── components/
+│   │   │   ├── ItemCard.tsx       # Single item: inline edit, status toggle, delete
+│   │   │   ├── ItemForm.tsx       # Create new item form
+│   │   │   ├── ItemList.tsx       # Items grid + empty state
+│   │   │   ├── Navbar.tsx         # App bar with user email + logout
+│   │   │   ├── Pagination.tsx     # Prev/Next + page indicator
+│   │   │   ├── ProtectedRoute.tsx # Auth guard; redirects to /login if no token
+│   │   │   ├── SearchBar.tsx      # Debounced text search (300ms)
+│   │   │   └── StatusFilter.tsx   # All / Active / Completed / Archived dropdown
+│   │   ├── pages/
+│   │   │   ├── Dashboard.tsx      # Main page; owns search/filter/page state + URL sync
+│   │   │   ├── Login.tsx          # Sign-in form
+│   │   │   ├── Register.tsx       # Account creation form
+│   │   │   └── NotFound.tsx       # 404 page
+│   │   ├── store/authStore.ts     # Zustand auth state (token + email, localStorage)
+│   │   └── types/index.ts         # Shared TypeScript interfaces (Item, PaginationMeta)
+│   └── dist/                      # Vite production bundle (git-ignored)
 ├── tests/
 │   ├── e2e/
-│   │   ├── helpers/auth.ts     # registerUser, loginViaApi helpers
-│   │   ├── pages/              # Page Object Models (Login, Dashboard)
-│   │   └── specs/              # login.spec.ts, dashboard.spec.ts, items.spec.ts
-│   ├── features/               # Gherkin .feature files
-│   └── playwright.config.ts
-├── .claude/agents/             # Claude Code agent definitions
-├── docs/SDLC_GUIDE.md          # Phase-by-phase AI prompts
-├── scripts/                    # Confluence doc build scripts
-└── .github/workflows/ci.yml    # GitHub Actions build + test
+│   │   ├── helpers/auth.ts        # registerUser + loginViaApi (API-level helpers)
+│   │   ├── pages/
+│   │   │   ├── LoginPage.ts       # Page Object Model for /login
+│   │   │   └── DashboardPage.ts   # Page Object Model for /dashboard
+│   │   └── specs/
+│   │       ├── login.spec.ts      # 22 tests: UI, validation, auth, route guards
+│   │       ├── dashboard.spec.ts  # 25 tests: layout, logout, item interactions
+│   │       └── items.spec.ts      # 14 tests: CRUD, search/filter, pagination
+│   ├── features/
+│   │   └── items.feature          # Gherkin BDD scenarios for item management
+│   └── playwright.config.ts       # Chromium + Firefox; auto-starts backend + frontend
+├── scripts/
+│   ├── push_confluence.py         # Pushes FRD, API Reference, Test Report, Deploy Guide
+│   ├── update_home.py             # Updates Confluence Home page navigation table
+│   ├── build_arch_doc.py          # Builds Architecture doc payload (already published)
+│   ├── build_hld_doc.py           # Builds HLD doc payload (already published)
+│   └── init-git.sh                # One-time Git + GitHub remote setup
+├── .claude/agents/                # Claude Code agent definitions (BA, Architect, Dev, QA…)
+├── docs/SDLC_GUIDE.md             # Phase-by-phase AI prompt guide
+├── .github/workflows/ci.yml       # GitHub Actions: build + Playwright on Chromium
+├── .env.example                   # Environment variable template
+└── package.json                   # Root scripts: install:all, dev, build, test, sdlc
 ```
 
 ---
@@ -147,10 +179,12 @@ All endpoints are prefixed `/api`. Authenticated routes require `Authorization: 
 | `GET` | `/items` | ✅ | `?page&limit&search&status` | `{ success, data: Item[], meta: { total, page, limit, totalPages } }` |
 | `POST` | `/items` | ✅ | `{ title, description? }` | `201 { success, data: { id } }` |
 | `PATCH` | `/items/:id` | ✅ | `{ title?, description?, status? }` | `{ success, data: Item }` |
-| `DELETE` | `/items/:id` | ✅ | — | `200 { success }` |
+| `DELETE` | `/items/:id` | ✅ | — | `200 { success, data: { deleted: true } }` |
 | `GET` | `/health` | — | — | `{ success, data: { status: "ok" } }` |
 
 Item status values: `active` | `completed` | `archived`
+
+All responses follow the envelope format: `{ success: boolean, data?: T, error?: string }`
 
 ---
 
@@ -160,7 +194,7 @@ Item status values: `active` | `completed` | `archived`
 - **Protected Routes** — unauthenticated users redirected to `/login`
 - **Item CRUD** — create, read, update title/status/description, delete
 - **Inline Editing** — click item title to edit in place; Enter saves, Escape cancels
-- **Status Toggle** — checkbox flips active ↔ completed instantly
+- **Status Toggle** — checkbox flips `active` ↔ `completed` instantly
 - **Search** — 300 ms debounced full-text search (title + description)
 - **Status Filter** — All / Active / Completed / Archived
 - **Pagination** — server-side with `COUNT(*)` + `LIMIT`/`OFFSET`; URL-synced
@@ -182,20 +216,47 @@ npx playwright show-report           # open HTML report
 
 ### Test coverage
 
-| Spec | Suites | Tests |
-|------|--------|-------|
-| `login.spec.ts` | UI, Validation, Authentication, Route Guards | 22 |
-| `dashboard.spec.ts` | Auth Guard, Layout, Logout, Item Interactions | 25 |
-| `items.spec.ts` | Item Management, Search & Filter, Pagination | 14 |
-| **Total** | | **61** |
+| Spec | Suites | Tests | Coverage Area |
+|------|--------|-------|---------------|
+| `login.spec.ts` | 4 | 22 | Login UI, validation, authentication, route guards |
+| `dashboard.spec.ts` | 4 | 25 | Auth guard, layout, logout, item interactions |
+| `items.spec.ts` | 3 | 14 | Item CRUD, search & filter, pagination |
+| **Total** | **11** | **61** | |
 
 ### CI
 
-GitHub Actions runs on every push to `main`:
+GitHub Actions runs on every push to `main`, `develop`, and `feature/**`:
 1. Build backend (tsc)
 2. Build frontend (tsc + vite)
-3. Install Playwright browsers
-4. Run E2E tests on Chromium
+3. Install Playwright browsers (Chromium)
+4. Run E2E tests
+5. Upload HTML report as artifact (30-day retention)
+
+---
+
+## Documentation (Confluence)
+
+Scripts under `scripts/` manage the Confluence space. Add `CONFLUENCE_API_TOKEN` to `.env` before running.
+
+```bash
+# Push FRD, API Reference, Test Execution Report, Deployment Guide (as child pages)
+python scripts/push_confluence.py
+
+# Update the Confluence Home page navigation table
+python scripts/update_home.py
+```
+
+### Confluence Space Structure
+
+```
+Capstone Home                        (pageId: 2889552361)  ✅ updated
+├── Architecture Document            (pageId: 2889554110)  ✅ published
+├── HLD - High Level Design          (pageId: 2889554152)  ✅ published
+├── FRD - Functional Requirements    (pageId: 2889556181)  ✅ updated
+├── API Reference - REST API         (pageId: 2889556182)  ✅ updated
+├── Test Execution Report (E2E)      (pageId: 2889556184)  ✅ updated
+└── Development and Deployment Guide (pageId: 2889556185)  ✅ updated
+```
 
 ---
 
@@ -221,12 +282,12 @@ Human-in-the-Loop checkpoints occur after each phase before proceeding.
 
 | Story | Title | Priority | Status |
 |-------|-------|----------|--------|
-| EPMCDMETST-55183 | [Epic] AI-Driven SDLC Enhancements | — | Open |
-| EPMCDMETST-55184 | Item Management Dashboard UI | High | Resolved |
-| EPMCDMETST-55185 | JWT Auth Guard and Protected Routes | High | Resolved |
-| EPMCDMETST-55186 | Item Search and Status Filter | Medium | Resolved |
-| EPMCDMETST-55187 | Item Status Update — Complete CRUD | Medium | Resolved |
-| EPMCDMETST-55188 | Pagination for Items List | Medium | Resolved |
+| [EPMCDMETST-55183](https://jiraeu.epam.com/browse/EPMCDMETST-55183) | [Epic] AI-Driven SDLC Enhancements | — | Open |
+| [EPMCDMETST-55184](https://jiraeu.epam.com/browse/EPMCDMETST-55184) | Item Management Dashboard UI | High | Resolved |
+| [EPMCDMETST-55185](https://jiraeu.epam.com/browse/EPMCDMETST-55185) | JWT Auth Guard and Protected Routes | High | Resolved |
+| [EPMCDMETST-55186](https://jiraeu.epam.com/browse/EPMCDMETST-55186) | Item Search and Status Filter | Medium | Resolved |
+| [EPMCDMETST-55187](https://jiraeu.epam.com/browse/EPMCDMETST-55187) | Item Status Update — Complete CRUD | Medium | Resolved |
+| [EPMCDMETST-55188](https://jiraeu.epam.com/browse/EPMCDMETST-55188) | Pagination for Items List | Medium | Resolved |
 
 ---
 
@@ -244,3 +305,7 @@ git push origin feature/EPMCDMETST-XXXXX-short-desc
 ```
 
 Commit convention: `feat|fix|test|docs|chore(scope): description`
+
+---
+
+**Human Review Required**: README updated. Confluence pages for FRD, API Reference, Test Execution Report, and Deployment Guide are ready to publish — add `CONFLUENCE_API_TOKEN` to `.env` and run `python scripts/push_confluence.py` followed by `python scripts/update_home.py`.
