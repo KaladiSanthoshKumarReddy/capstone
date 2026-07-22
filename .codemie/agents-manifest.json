@@ -1,0 +1,86 @@
+{
+  "version": "1.0.0",
+  "discovery": {
+    "method": "directory-scan",
+    "sourcePath": ".claude/agents",
+    "pattern": "**/*.md",
+    "autoRegister": true,
+    "lastScanned": "2026-07-22T00:00:00Z"
+  },
+  "agents": [
+    {
+      "id": "ba-agent",
+      "name": "Business Analyst",
+      "description": "Analyzes requirements, identifies gaps/enhancements, writes Jira Epics & User Stories",
+      "path": ".claude/agents/ba-agent.md",
+      "role": "Business Analyst",
+      "triggers": ["analyze requirements", "create epic", "write user story", "identify gaps", "BA analysis"],
+      "capabilities": ["requirement-analysis", "jira-epic-creation", "user-story-writing", "acceptance-criteria"],
+      "dependencies": ["JIRA_API_TOKEN", "JIRA_BASE_URL"]
+    },
+    {
+      "id": "architect-agent",
+      "name": "Architect",
+      "description": "Creates architecture docs, HLD/LLD, pushes to Confluence",
+      "path": ".claude/agents/architect-agent.md",
+      "role": "Solution Architect",
+      "triggers": ["design architecture", "write HLD", "create LLD", "design system"],
+      "capabilities": ["architecture-design", "hld-generation", "lld-generation", "confluence-publishing"],
+      "dependencies": ["CONFLUENCE_API_TOKEN", "CONFLUENCE_BASE_URL"]
+    },
+    {
+      "id": "dev-agent",
+      "name": "Developer",
+      "description": "Generates React + Node.js code, commits to Git",
+      "path": ".claude/agents/dev-agent.md",
+      "role": "Full-Stack Developer",
+      "triggers": ["implement feature", "write code", "build component", "dev work"],
+      "capabilities": ["react-development", "nodejs-development", "git-commits", "code-generation"],
+      "dependencies": ["GITHUB_TOKEN"]
+    },
+    {
+      "id": "qa-agent",
+      "name": "QA Engineer",
+      "description": "Writes Gherkin + Playwright TypeScript tests",
+      "path": ".claude/agents/qa-agent.md",
+      "role": "Quality Assurance",
+      "triggers": ["write test", "create BDD scenario", "generate tests", "QA analysis"],
+      "capabilities": ["bdd-scenario-writing", "playwright-test-generation", "gherkin-writing", "test-strategy"],
+      "dependencies": []
+    },
+    {
+      "id": "review-agent",
+      "name": "Code Reviewer",
+      "description": "Code reviews PRs, posts comments to Git",
+      "path": ".claude/agents/review-agent.md",
+      "role": "Code Reviewer",
+      "triggers": ["review code", "review PR", "code review", "review changes"],
+      "capabilities": ["code-review", "pr-analysis", "git-commenting", "quality-assessment"],
+      "dependencies": ["GITHUB_TOKEN"]
+    },
+    {
+      "id": "docs-agent",
+      "name": "Documentation Specialist",
+      "description": "Updates Confluence pages with FRD/design docs",
+      "path": ".claude/agents/docs-agent.md",
+      "role": "Technical Writer",
+      "triggers": ["write documentation", "update docs", "publish confluence"],
+      "capabilities": ["documentation-writing", "confluence-updates", "api-documentation", "guide-creation"],
+      "dependencies": ["CONFLUENCE_API_TOKEN", "CONFLUENCE_BASE_URL"]
+    }
+  ],
+  "profiles": {
+    "work": {
+      "provider": "claude",
+      "model": "claude-opus-4-7",
+      "availableAgents": ["ba-agent", "architect-agent", "dev-agent", "qa-agent", "review-agent", "docs-agent"],
+      "integrations": ["jira", "confluence", "github"]
+    },
+    "personal": {
+      "provider": "claude",
+      "model": "claude-sonnet-4-6",
+      "availableAgents": ["dev-agent", "qa-agent", "docs-agent"],
+      "integrations": ["github"]
+    }
+  }
+}
