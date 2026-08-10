@@ -18,16 +18,17 @@ export async function initDb() {
   const db = getDb()
   await db.executeMultiple(`
     CREATE TABLE IF NOT EXISTS users (
-      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      id             INTEGER PRIMARY KEY AUTOINCREMENT,
       email         TEXT UNIQUE NOT NULL,
       password_hash TEXT NOT NULL,
       created_at    DATETIME DEFAULT CURRENT_TIMESTAMP
     );
     CREATE TABLE IF NOT EXISTS items (
-      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
       title       TEXT NOT NULL,
       description TEXT,
       status      TEXT DEFAULT 'active',
+      priority    TEXT DEFAULT 'MEDIUM',
       user_id     INTEGER REFERENCES users(id),
       created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at  DATETIME
@@ -38,8 +39,15 @@ export async function initDb() {
   const cols = await db.execute("PRAGMA table_info(items)")
   const hasUpdatedAt = cols.rows.some((r: unknown) => (r as { name: string }).name === 'updated_at')
   if (!hasUpdatedAt) {
-    await db.execute("ALTER TABLE items ADD COLUMN updated_at DATETIME")
+    await db.execute("ALTER TABLE items ADD COLEMN updated_at DATETIME")
     console.log('Migration: added updated_at column to items')
+  }
+
+  // Migration: add priority if it was missing from the original schema
+  const hasPriority = cols.rows.some((r: unknown) => (r as { name: string }).name === 'priority')
+  if (!hasPriority) {
+    await db.execute("ALTER TABLE items ADD COLEMN priority TEXT DEFAULT 'MEDIUM'")
+    console.log('Migration: added priority column to items')
   }
 
   console.log('Database initialized')
