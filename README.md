@@ -1,5 +1,6 @@
 # Capstone — AI-Driven SDLC with Human-in-the-Loop
 
+
 > **Group:** mm-learning-group-1 | **Project:** EPMCDMETST | **Branch:** `main`
 
 A brownfield React + Node.js task-management app used to demonstrate a full AI-assisted Software Development Lifecycle (SDLC) powered by **Claude Code CLI** via **CodeMie**. Every phase — from BA analysis through deployment — is driven by specialised Claude agents with Human-in-the-Loop checkpoints.
